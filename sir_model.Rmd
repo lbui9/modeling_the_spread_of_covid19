@@ -1,0 +1,200 @@
+---
+title: "Assignment 7: Modeling COVID-19"
+author: "Linh Bui"
+date: "`r Sys.Date()`"
+documentclass: article
+geometry: margin=1in
+fontsize: 11pt
+output:
+  pdf_document:
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    dev: pdf
+    highlight: tango
+  html_document:
+    theme: default
+    self_contained: true
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    smart: true
+    dev: svg
+---
+
+```{r setup, include = FALSE, echo=FALSE}
+# DO NOT ALTER THIS CHUNK
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.width = 5,
+  fig.asp = 0.618,
+  dpi = 120,
+  fig.align = "center",
+  cache = FALSE
+)
+# Load required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(scales))
+covid_real <- read_csv("covid_counts.csv")
+```
+
+
+## Exercise 1
+
+```{r}
+days_range <- 1:250
+```
+
+
+
+## Exercise 2
+
+```{r}
+susceptible <- 300000000
+
+infectious <- 1
+
+recovered <- 0
+```
+
+
+## Exercise 3
+
+```{r}
+beta <- 0.25
+
+gamma <- 0.125
+
+N <- 300000001
+
+for(day in 2:250){
+  susceptible[day] <- susceptible[day - 1] - (beta * susceptible[day - 1] * infectious[day - 1]) / N
+  infectious[day] <- infectious[day - 1] + ((beta * susceptible[day - 1] * infectious[day - 1]) / N) - (gamma * infectious[day - 1])
+  recovered[day] <- recovered[day - 1] + gamma * infectious[day-1] 
+}
+```
+
+
+## Exercise 4
+
+```{r}
+covid_sim <- tibble(
+  days_range,
+  susceptible, 
+  infectious,
+  recovered
+)
+```
+
+
+
+## Exercise 5
+
+i. 
+
+```{r}
+covid_sim %>%
+  ggplot() +
+  geom_line(mapping = aes(x=days_range, y=susceptible, color="Susceptible")) +
+  geom_line(mapping = aes(x=days_range, y=infectious, color="Infectious")) +
+  geom_line(mapping = aes(x=days_range, y=recovered, color="Recovered")) +
+  labs(
+    title = "Measure of Infections Over Time",
+    x = "Days in USA",
+    y = "Numbers of People"
+  )
+```
+
+ii. During days 150-175, the number of susceptible people is predicted to fall sharply while the number of recovered people is expected to increase significantly. The number of infectious people, in the mean time, is anticipated to increase, reach the top, and fall over the above mentioned time period. I think the reason for these trends could be that when the society realize that the number of infectious people increase, they use more protections and get vaccinated. That is why the number of infectious people and susceptible people starts decreasing, and the number of recovered people starts increasing. 
+
+## Exercise 6
+
+i. 
+
+```{r}
+ggplot(data = covid_sim) +
+  geom_line(mapping = aes(
+    x = days_range, 
+    y = infectious, 
+    color = "simulation")) +                
+  geom_line(data = covid_real, 
+            mapping = aes(x = days_in_country, y = current_cases, color = "reality")) +
+  labs(
+    title = " The number of simulated and real cases of COVID-19 over time",
+    x = "Day",
+    y = "The number of cases"
+  )
+```
+
+ii. The SIR model's prediction is different from the real data. The SIR model predicted that the infectious rate would increase slowly in the first 100 days then suddenly rocket and reach its peak on days 160s. After that, it is predicted to plummet and get back to low infectious rate. Meanwhile, reality showed that the infections increased gradually over the time period. 
+
+## Exercise 7
+
+```{r}
+ggplot(data = covid_sim) +
+  geom_line(mapping = aes(
+    x = days_range, 
+    y = infectious, 
+    color = "simulation")) +                
+  geom_line(data = covid_real, 
+            mapping = aes(x = days_in_country, y = current_cases, color = "reality")) +
+  labs(
+    title = " The number of simulated and real cases of COVID-19 over time",
+    x = "Day",
+    y = "The number of cases") +
+  scale_y_log10(labels=trans_format('log10', math_format(10^.x)))
+```
+
+## Exercise 8
+
+```{r}
+days_range <- 1:250
+
+susceptible <- 300000000
+
+infectious <- 1
+
+recovered <- 0
+
+beta <- 0.26
+
+gamma <- 0.125
+
+N <- 300000001
+
+for(day in 2:250){
+  susceptible[day] <- susceptible[day - 1] - (beta * susceptible[day - 1] * infectious[day - 1]) / N
+  infectious[day] <- infectious[day - 1] + ((beta * susceptible[day - 1] * infectious[day - 1]) / N) - (gamma * infectious[day - 1])
+  recovered[day] <- recovered[day - 1] + gamma * infectious[day-1] 
+}
+
+covid_sim <- tibble(
+  days_range,
+  susceptible, 
+  infectious,
+  recovered
+)
+
+ggplot(data = covid_sim) +
+  geom_line(mapping = aes(
+    x = days_range, 
+    y = infectious, 
+    color = "simulation")) +                
+  geom_line(data = covid_real, 
+            mapping = aes(x = days_in_country, y = current_cases, color = "reality")) +
+  labs(
+    title = " The number of simulated and real cases of COVID-19 over time",
+    x = "Day",
+    y = "The number of cases") +
+  scale_y_log10(labels=trans_format('log10', math_format(10^.x)))
+```
+
+* The reproduction number that I have found allows the SIR model to fit the first 60 days of the US COVID-19 pandemic is 2.08
+
+```{r}
+reproduction_number <- beta / gamma
+```
+
